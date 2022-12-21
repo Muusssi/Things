@@ -1,0 +1,29 @@
+{% extends base.html %}
+
+{% block body %}
+  <p>This page lists questions on things that already have some answers but not
+     for all the questions. Some questions migth have been added since this
+     thing was tought to the system.
+  </p>
+
+  <form method="POST">
+
+    <div class="form-group">
+      <label for="thing">Thing</label>
+      <input id="thing" class="form-control" type="text" name="thing"
+             required value="{{ thing_name or thing['name'] }}" autocomplete="off">
+    </div>
+
+    <button type="submit" class="btn btn-secondary">Add thing</button>
+    <a href="/teach/missing?offset={{ thing_offset + 1 }}" class="btn btn-warning">Other thing</a>
+
+    {% for question in questions %}
+      {% if question['id'] in thing['questions'] %}
+        {% module Template('modules/question.html', question=question) %}
+      {% end %}
+    {% end %}
+
+    <button type="submit" class="btn btn-primary">Teach</button>
+
+  </form>
+{% end %}

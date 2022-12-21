@@ -1,0 +1,63 @@
+{% extends base.html %}
+
+{% block body %}
+  <p>
+    Here you can register new questions for the system to use.
+    New questions should only be added to help the system differentiate between things that are
+    too similar based on the existing questions.
+  </p>
+
+  <form method="POST">
+    {% if error %}
+      <div class="alert alert-danger" role="alert">
+        {{ error }}
+      </div>
+    {% elif message %}
+      <div class="alert alert-success" role="alert">
+        {{ message }}
+      </div>
+    {% end %}
+
+    <div class="form-group">
+      <label for="question">Question</label>
+      <input id="question" class="form-control" type="text" name="question"
+             autocomplete="off" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register Question</button>
+
+  </form>
+
+  <h3>These things have almost the same answers for the existing questions:</h3>
+  <table>
+    {% for thing_a, thing_b, diff in indistinguishable %}
+      {% if diff < 2 %}
+        <tr>
+          <th style="text-align: right;">
+            <a href="/teach?thing={{ url_escape(thing_a) }}">{{ thing_a }}</a>
+          </th>
+          <td>appears to be too similar to</td>
+          <th>
+            <a href="/teach?thing={{ url_escape(thing_b) }}">{{ thing_b }}</a>
+          </th>
+        </tr>
+      {% end %}
+    {% end %}
+  </table>
+  <h5>These things have also very similar answers:</h5>
+  <table>
+    {% for thing_a, thing_b, diff in indistinguishable %}
+      {% if diff >= 2 %}
+        <tr>
+          <th style="text-align: right;">
+            <a href="/teach?thing={{ url_escape(thing_a) }}">{{ thing_a }}</a>
+          </th>
+          <td>appears to be quite similar to</td>
+          <th>
+            <a href="/teach?thing={{ url_escape(thing_b) }}">{{ thing_b }}</a>
+          </th>
+        </tr>
+      {% end %}
+    {% end %}
+  </table>
+{% end %}

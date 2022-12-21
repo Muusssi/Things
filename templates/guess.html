@@ -1,0 +1,48 @@
+{% extends base.html %}
+
+{% block body %}
+  <form method="POST">
+
+    <div class="form-group">
+      <label for="thing">Thing</label>
+      <input id="thing" class="form-control" type="text" name="thing"
+             required value="{{ thing_name or thing['name'] }}" autocomplete="off">
+    </div>
+
+    <button type="submit" class="btn btn-secondary">Add thing</button>
+    <a href="/teach?offset={{ thing_offset + 1 }}" class="btn btn-warning">Other thing</a>
+
+    {% for question in questions %}
+      <div class="form-group row">
+        <label class="col-sm-2 col-form-label">{{ question['question'] }}</label>
+        <input type="text" name="question" hidden value="{{ question['id'] }}">
+        <div class="col-sm-10">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+                   id="answer_radio_yes_{{ question['id'] }}" value="yes">
+            <label class="form-check-label" for="answer_radio_yes_{{ question['id'] }}">Yes</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+                   id="answer_radio_no_{{ question['id'] }}" value="no">
+            <label class="form-check-label" for="answer_radio_no_{{ question['id'] }}">No</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+                   id="answer_radio_sometimes_{{ question['id'] }}" value="sometimes">
+            <label class="form-check-label" for="answer_radio_sometimes_{{ question['id'] }}">Sometimes</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+                   id="answer_radio_na_{{ question['id'] }}" value="na">
+            <label class="form-check-label" for="answer_radio_na_{{ question['id'] }}">Not applicable/I don't know</label>
+          </div>
+        </div>
+
+      </div>
+    {% end %}
+
+    <button type="submit" class="btn btn-primary">Teach</button>
+
+  </form>
+{% end %}

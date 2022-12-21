@@ -1,0 +1,26 @@
+
+{#
+required:
+  - question #}
+
+<div class="form-group row">
+  <label class="col-sm-2 col-form-label">{{ question['question'] }}</label>
+  <input type="text" name="question" hidden value="{{ question['id'] }}">
+  <div class="col-sm-10">
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+             id="answer_radio_yes_{{ question['id'] }}" value="yes">
+      <label class="form-check-label" for="answer_radio_yes_{{ question['id'] }}">Yes</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+             id="answer_radio_no_{{ question['id'] }}" value="no">
+      <label class="form-check-label" for="answer_radio_no_{{ question['id'] }}">No</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
+             id="answer_radio_sometimes_{{ question['id'] }}" value="sometimes">
+      <label class="form-check-label" for="answer_radio_sometimes_{{ question['id'] }}">Sometimes/Maybe</label>
+    </div>
+  </div>
+</div>

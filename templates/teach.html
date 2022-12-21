@@ -1,0 +1,27 @@
+{% extends base.html %}
+
+{% block body %}
+  <p>
+    Please answer these questions to teach the system about this thing that the system does not yet know about.
+    You can also type some nother thing that you want to teach the system about instead or ask for a next thing.
+  </p>
+
+  <form method="POST">
+
+    <div class="form-group">
+      <label for="thing">Thing:</label>
+      <input id="thing" class="form-control" type="text" name="thing"
+             required value="{{ thing_name or thing['name'] }}" autocomplete="off">
+    </div>
+
+    <button type="submit" class="btn btn-secondary">Add thing</button>
+    <a href="/teach?offset={{ thing_offset + 1 }}" class="btn btn-warning">Next thing</a>
+
+    {% for question in questions %}
+      {% module Template('modules/question.html', question=question) %}
+    {% end %}
+
+    <button type="submit" class="btn btn-primary">Teach</button>
+
+  </form>
+{% end %}

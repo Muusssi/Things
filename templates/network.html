@@ -1,0 +1,67 @@
+{% extends base.html %}
+
+{% block body %}
+
+  <p>
+    On this page, the system visualises the things it has learned about by linking things that are very similar to each other.
+    Each thing is linked to at least the thing most similar to it and possibly some other similar things.
+    The network is big so you will need to wait a bit while the visualisation stabilises.
+    Things with darker color have have received new answers in the last 12 hours.
+    <span id="selection_span" hidden>
+      <label>Selected thing:</label>
+      <a id="selected_thing_name" href="#"></a>
+    </span>
+  </p>
+
+  <div id="network"></div>
+
+  <script type="text/javascript">
+    var things = {}
+
+    function store_things(thing_list) {
+      for (var i = 0; i < thing_list.length; i++) {
+        things[thing_list[i].id] = thing_list[i];
+      }
+    }
+
+    function draw_network(json_data) {
+      store_things(json_data.things);
+
+      let nodes = []
+      for (var i = 0; i < json_data.things.length; i++) {
+        let thing = json_data.things[i];
+        if (thing.updated_recently) {
+          thing.color = '#5984cf';
+        }
+        nodes.push(thing);
+      }
+
+      var container = document.getElementById("network");
+      var data = {
+        nodes: json_data.things,
+        edges: json_data.links,
+      };
+      var options = {};
+      var network = new vis.Network(container, data, options);
+      network.on("selectNode", function (params) {
+        if (params.nodes.length == 1) {
+          select_thing(params.nodes[0]);
+        }
+      });
+    }
+
+    function select_thing(thing_id) {
+      document.getElementById('selection_span').hidden = false;
+      let selected_thing = things[thing_id];
+      let thing_link = document.getElementById('selected_thing_name');
+      thing_link.innerHTML = selected_thing.label;
+      thing_link.href = '/teach?thing=' + encodeURIComponent(selected_thing.label);
+    }
+
+    window.onload = function() {
+      get('/data/network', draw_network);
+    }
+
+  </script>
+
+{% end %}

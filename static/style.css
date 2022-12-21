@@ -1,0 +1,11 @@
+
+body {
+    /*width: 100%;*/
+    margin: 1em;
+}
+
+div#network {
+    /*width: 100%;*/
+    height: 80vh;
+    display: inline-block;
+}

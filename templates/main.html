@@ -1,0 +1,15 @@
+{% extends base.html %}
+
+{% block body %}
+  <p>The system has gotten {{ answer_count }} answers to
+     {{ question_count }} different questions
+     about {{ learned_things_count }} things.
+  </p>
+
+  <ul>
+    <li>
+      Please <a href="/teach">teach</a> the system by answering questions about things.
+    </li>
+  </ul>
+
+{% end %}
