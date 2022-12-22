@@ -80,7 +80,8 @@ class GuessHandler(BaseHandler):
 
     def handle_answers(self, guess_id):
         question_ids = self.get_arguments('question')
-        self.db.record_guess_success(guess_id, len(question_ids))
+        wrong_guesses = len(self.get_arguments('wrong_guess'))
+        self.db.record_guess_success(guess_id, len(question_ids) + wrong_guesses)
         for question_id in question_ids:
             answer = self.get_argument('answer_' + question_id, None)
             if int(question_id) == 0:
