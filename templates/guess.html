@@ -3,46 +3,30 @@
 {% block body %}
   <form method="POST">
 
-    <div class="form-group">
-      <label for="thing">Thing</label>
-      <input id="thing" class="form-control" type="text" name="thing"
-             required value="{{ thing_name or thing['name'] }}" autocomplete="off">
-    </div>
-
-    <button type="submit" class="btn btn-secondary">Add thing</button>
-    <a href="/teach?offset={{ thing_offset + 1 }}" class="btn btn-warning">Other thing</a>
-
-    {% for question in questions %}
-      <div class="form-group row">
-        <label class="col-sm-2 col-form-label">{{ question['question'] }}</label>
-        <input type="text" name="question" hidden value="{{ question['id'] }}">
-        <div class="col-sm-10">
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
-                   id="answer_radio_yes_{{ question['id'] }}" value="yes">
-            <label class="form-check-label" for="answer_radio_yes_{{ question['id'] }}">Yes</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
-                   id="answer_radio_no_{{ question['id'] }}" value="no">
-            <label class="form-check-label" for="answer_radio_no_{{ question['id'] }}">No</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
-                   id="answer_radio_sometimes_{{ question['id'] }}" value="sometimes">
-            <label class="form-check-label" for="answer_radio_sometimes_{{ question['id'] }}">Sometimes</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="answer_{{ question['id'] }}"
-                   id="answer_radio_na_{{ question['id'] }}" value="na">
-            <label class="form-check-label" for="answer_radio_na_{{ question['id'] }}">Not applicable/I don't know</label>
-          </div>
-        </div>
-
-      </div>
+    {% if out_of_questions %}
+      <p>I'm out of questions. So probably I don't know about the thing you are thinking of.</p>
+      <label>So, what is it?</label>
+      <input type="text" name="thing">
+    {% else %}
+      {% if things and things[0]['diff'] < things[1]['diff'] %}
+        <input type="text" name="guess_id" value="{{ things[0]['id'] }}" hidden>
+      {% elif things %}
+        <p>It could be {{ ', '.join([x['name'] for x in things[:6]]) }} or {{ things[6]['name'] }}</p>
+      {% end %}
+      {% if things %}
+        <p>And most likely it is not {{ ', '.join([x['name'] for x in things[::-1][:6]]) }} or {{ things[::-1][6]['name'] }}</p>
+      {% end %}
     {% end %}
 
-    <button type="submit" class="btn btn-primary">Teach</button>
+    <button type="submit" class="btn btn-primary">Answer</button>
+
+    {% for wrong_guess in wrong_guesses %}
+      <input type="text" name="wrong_guess" value="{{ wrong_guess }}" hidden>
+    {% end %}
+
+    {% for question in answers_so_far %}
+      {% module Template('modules/question.html', question=question, required=False) %}
+    {% end %}
 
   </form>
 {% end %}

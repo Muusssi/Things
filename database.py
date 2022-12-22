@@ -30,20 +30,20 @@ ORDER BY missing DESC;
 """
 
 COLLECTED_ANSWERS = """
-WITH collected_answers AS (
-    SELECT thing, question,
-           (COUNT(nullif(answer='yes', false)) + COUNT(nullif(answer='sometimes', false))::real/2)/COUNT(*) as yes,
-           (COUNT(nullif(answer='no', false)) + COUNT(nullif(answer='sometimes', false))::real/2)/COUNT(*) as no,
-           COUNT(nullif(answer='sometimes', false))/COUNT(*) as sometimes,
-           max(answer.timestamp)>now()-'12h'::interval as updated_recently
-    FROM answer
-    GROUP BY thing, question
-    ORDER BY thing, question
-)
+SELECT thing, question,
+       (COUNT(nullif(answer='yes', false)) + COUNT(nullif(answer='sometimes', false))::real/2)/COUNT(*) as yes,
+       (COUNT(nullif(answer='no', false)) + COUNT(nullif(answer='sometimes', false))::real/2)/COUNT(*) as no,
+       COUNT(nullif(answer='sometimes', false))/COUNT(*) as sometimes,
+       max(answer.timestamp)>now()-'12h'::interval as updated_recently
+FROM answer
+GROUP BY thing, question
+ORDER BY thing, question
 """
 
 INDISTINGUISHABLE = """
-{collected_answers}
+WITH collected_answers AS (
+    {collected_answers}
+)
 SELECT thing_a, thing_b, difference
 FROM (
     SELECT thing_a.name as thing_a, thing_b.name as thing_b, COUNT(*) as count,
@@ -62,7 +62,9 @@ ORDER BY difference;
 """.format(collected_answers=COLLECTED_ANSWERS)
 
 SIMILAR_THINGS = """
-{collected_answers}
+WITH collected_answers AS (
+    {collected_answers}
+)
 SELECT thing_a, id_a, thing_b, id_b, difference, rank, updated_recently
     FROM (
     SELECT thing_a, id_a, thing_b, id_b, difference::real/count as difference,
@@ -88,9 +90,43 @@ ORDER BY id_a, rank;
 """
 
 
-CARACTERIZING_QUESTIONS = """
-SELECT
-FROM
+MATCHING_THINGS = """
+WITH collected_answers AS (
+    {collected_answers}
+),
+answers_so_far(thing, question, yes, no) AS (
+    VALUES
+    {values}
+)
+SELECT thing.id, thing.name,
+       (sum(ABS(known_answers.yes - answers_so_far.yes)) +
+        sum(ABS(known_answers.no - answers_so_far.no)))::real/count(*) as difference
+FROM thing
+JOIN (
+    SELECT thing, question, yes, no
+    FROM collected_answers
+) known_answers ON known_answers.thing=thing.id
+JOIN answers_so_far ON answers_so_far.question=known_answers.question
+{filter_things}
+GROUP BY thing.id, thing.name
+ORDER BY difference;
+"""
+
+RELEVANT_QUESTIONS = """
+SELECT question.question, question.id,
+       abs((yes - count)*(no - count)*(sometimes - count)) as relevance
+FROM (
+    SELECT question,
+           count(nullif(answer='yes', false)) as yes,
+           count(nullif(answer='no', false)) as no,
+           count(nullif(answer='sometimes', false)) as sometimes,
+           count(*) as count
+    FROM answer
+    {filterer}
+    GROUP BY question
+) AS answers
+JOIN question ON answers.question=question.id
+ORDER BY relevance DESC;
 """
 
 
@@ -139,6 +175,9 @@ class Database():
         for question_id, question in self.execute_and_get_rows(sql):
             questions.append({'id': question_id, 'question': question})
         return questions
+
+    def question_dict(self):
+        return {question['id']: question for question in self.questions()}
 
     def things(self):
         things = []
@@ -200,6 +239,45 @@ class Database():
             links.append({'from': id_a, 'to': id_b, 'length': dist + 1})
         return list(things.values()), links
 
+    def matching_things(self, answers_so_far, wrong_guesses):
+        answers = []
+        for answer in answers_so_far:
+            if answer.get('answer', None) == 'yes':
+                yes, no = 1, 0
+            elif answer.get('answer', None) == 'no':
+                yes, no = 0, 1
+            elif answer.get('answer', None) == 'sometimes':
+                yes, no = 0.5, 0.5
+            else:
+                continue
+            answers.append(f"(null,{answer['id']},{yes},{no})")
+        if len(answers) < 1:
+            return []
+
+        things = []
+        if wrong_guesses:
+            filter_things = f"WHERE thing.id NOT IN ({','.join([str(x) for x in wrong_guesses])})"
+        else:
+            filter_things = ''
+        sql = MATCHING_THINGS.format(collected_answers=COLLECTED_ANSWERS,
+                                     values=','.join(answers),
+                                     filter_things=filter_things)
+        for thing_id, name, diff in self.execute_and_get_rows(sql):
+            thing = {'id': thing_id, 'name': name, 'diff': diff}
+            things.append(thing)
+
+        return things
+
+    def relevant_questions(self, relevant_things, used_questions):
+        questions = []
+        thing_ids = ','.join([str(x['id']) for x in relevant_things])
+        question_ids = ','.join([str(x['id']) for x in used_questions])
+        filterer = f"WHERE thing in ({thing_ids}) AND question NOT IN ({question_ids})"
+
+        sql = RELEVANT_QUESTIONS.format(filterer=filterer)
+        for question, question_id, _ in self.execute_and_get_rows(sql):
+            questions.append({'id': question_id, 'question': question})
+        return questions
 
 
 if __name__ == '__main__':
