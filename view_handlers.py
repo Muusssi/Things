@@ -79,7 +79,9 @@ class NewQuestionHandler(BaseHandler):
 class GuessHandler(BaseHandler):
 
     def handle_answers(self, guess_id):
-        for question_id in self.get_arguments('question'):
+        question_ids = self.get_arguments('question')
+        self.db.record_guess_success(guess_id, len(question_ids))
+        for question_id in question_ids:
             answer = self.get_argument('answer_' + question_id, None)
             if int(question_id) == 0:
                 continue
@@ -121,7 +123,7 @@ class GuessHandler(BaseHandler):
             self.handle_answers(guess_id)
             self.redirect('/guess')
             return
-        elif self.answer_given():
+        if self.answer_given():
             thing_id = self.db.reqister_thing(self.get_argument('thing'))
             self.handle_answers(thing_id)
             self.redirect('/guess')

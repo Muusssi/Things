@@ -19,4 +19,11 @@ CREATE TABLE answer (
     timestamp timestamp default now()
 );
 
+CREATE TABLE guess_success (
+    thing int REFERENCES thing(id),
+    questions_needed int,
+    timestamp timestamp default now()
+);
+
+
 
