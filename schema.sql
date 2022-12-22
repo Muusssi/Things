@@ -22,6 +22,7 @@ CREATE TABLE answer (
 CREATE TABLE guess_success (
     thing int REFERENCES thing(id),
     questions_needed int,
+    wrong_guesses int,
     timestamp timestamp default now()
 );
 

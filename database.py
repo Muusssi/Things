@@ -279,9 +279,9 @@ class Database():
             questions.append({'id': question_id, 'question': question})
         return questions
 
-    def record_guess_success(self, thing_id, guesses):
-        sql = "INSERT INTO guess_success(thing, questions_needed) VALUES (%s,%s)"
-        self.execute(sql, (thing_id, guesses))
+    def record_guess_success(self, thing_id, questions, guesses):
+        sql = "INSERT INTO guess_success(thing, questions_needed, wrong_guesses) VALUES (%s,%s,%s)"
+        self.execute(sql, (thing_id, questions, guesses))
 
 
 if __name__ == '__main__':
