@@ -2,9 +2,11 @@
 import psycopg2
 
 THINGS_BY_ANSWERS = """
-SELECT id, name, answers
+SELECT id, name, answers, answered_questions
 FROM (
-    SELECT thing.id, thing.name, count(answer.answer) as answers
+    SELECT thing.id, thing.name,
+           count(answer.answer) as answers,
+           count(DISTINCT question) as answered_questions
     FROM thing
     LEFT OUTER JOIN answer ON thing.id=answer.thing
     GROUP BY thing.id, thing.name
@@ -114,7 +116,9 @@ ORDER BY difference;
 
 RELEVANT_QUESTIONS = """
 SELECT question.question, question.id,
-       abs((yes - count)*(no - count)*(sometimes - count)) as relevance
+       abs(((yes - count)::real/count+1)*
+           ((no - count)::real/count+1)*
+           ((sometimes - count)::real/count+1)) as relevance
 FROM (
     SELECT question,
            count(nullif(answer='yes', false)) as yes,
@@ -127,6 +131,29 @@ FROM (
 ) AS answers
 JOIN question ON answers.question=question.id
 ORDER BY relevance DESC;
+"""
+
+ANSWERS = """
+SELECT question.question, question.id,
+       yes as yes_count,
+       no as no_count,
+       sometimes as sometimes_count,
+       count,
+       (yes + 0.5*sometimes)/count as yes,
+       (no + 0.5*sometimes)/count as no,
+       (sometimes + 0.5*yes + 0.5*no)/count as sometimes
+FROM (
+    SELECT question,
+           count(nullif(answer='yes', false)) as yes,
+           count(nullif(answer='no', false)) as no,
+           count(nullif(answer='sometimes', false)) as sometimes,
+           count(*) as count
+    FROM answer
+    WHERE thing={thing_id}
+    GROUP BY question
+) AS answers
+JOIN question ON answers.question=question.id
+ORDER BY question.id;
 """
 
 
@@ -163,6 +190,10 @@ class Database():
         cur.execute(sql, values)
         return list(cur.fetchall())
 
+    def execute_and_get_row(self, sql, values=None):
+        rows = self.execute_and_get_rows(sql, values)
+        return row[0] if rows else None
+
     def execute(self, sql, values=None, return_row=False):
         cur = self._cursor()
         cur.execute(sql, values)
@@ -181,8 +212,9 @@ class Database():
 
     def things(self):
         things = []
-        for thing_id, name, answer_count in self.execute_and_get_rows(THINGS_BY_ANSWERS):
-            things.append({'id': thing_id, 'name': name, 'answer_count': answer_count})
+        for thing_id, name, answer_count, answered in self.execute_and_get_rows(THINGS_BY_ANSWERS):
+            things.append({'id': thing_id, 'name': name, 'answer_count': answer_count,
+                           'answered': answered})
         return things
 
     def things_missing_answers(self):
@@ -227,7 +259,7 @@ class Database():
 
     def network_data(self, max_diff, min_links):
         sql = SIMILAR_THINGS.format(collected_answers=COLLECTED_ANSWERS,
-                                    max_diff=max_diff, min_answers=10, min_links=min_links)
+                                    max_diff=max_diff, min_answers=15, min_links=min_links)
         things = {}
         links = []
         for thing_a, id_a, thing_b, id_b, dist, _, updated_recently in self.execute_and_get_rows(sql):
@@ -239,7 +271,7 @@ class Database():
             links.append({'from': id_a, 'to': id_b, 'length': dist + 1})
         return list(things.values()), links
 
-    def matching_things(self, answers_so_far, wrong_guesses):
+    def matching_things(self, answers_so_far, wrong_guesses=None):
         answers = []
         for answer in answers_so_far:
             if answer.get('answer', None) == 'yes':
@@ -282,6 +314,25 @@ class Database():
     def record_guess_success(self, thing_id, questions, guesses):
         sql = "INSERT INTO guess_success(thing, questions_needed, wrong_guesses) VALUES (%s,%s,%s)"
         self.execute(sql, (thing_id, questions, guesses))
+
+    def answers(self, thing_id):
+        answer_list = []
+        sql = ANSWERS.format(thing_id=int(thing_id))
+        for (question, question_id, yes_count, no_count, sometimes_count, count,
+             yes_value, no_value, sometimes_value) in self.execute_and_get_rows(sql):
+            if yes_value > no_value and yes_value > sometimes_value:
+                answer = 'yes'
+            elif no_value > yes_value and no_value > sometimes_value:
+                answer = 'no'
+            else:
+                answer = 'sometimes'
+            answer_list.append({
+                'id': question_id, 'question': question, 'answer': answer,
+                'yes_count': yes_count, 'no_count': no_count,
+                'sometimes_count': sometimes_count, 'count': count,
+                'yes_value': yes_value, 'no_value': no_value,
+                'sometimes_value': sometimes_value})
+        return answer_list
 
 
 if __name__ == '__main__':

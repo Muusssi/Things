@@ -76,6 +76,21 @@ class NewQuestionHandler(BaseHandler):
             return
         self.render_form(message='New question added.')
 
+class ThingsHandler(BaseHandler):
+
+    def get(self):
+        self.render('things.html',
+                    things=self.db.things())
+
+class ThingHandler(BaseHandler):
+
+    def get(self, thing_id):
+        answers = self.db.answers(thing_id)
+        similar_things = self.db.matching_things(answers)
+        self.render('thing.html',
+                    answers=answers,
+                    similar_things=similar_things)
+
 class GuessHandler(BaseHandler):
 
     def handle_answers(self, guess_id):
@@ -133,12 +148,16 @@ class GuessHandler(BaseHandler):
         question_dict = self.db.question_dict()
         answers_so_far, wrong_guesses = self.answers_so_far(question_dict)
         things = self.db.matching_things(answers_so_far, wrong_guesses)
-        if things and things[0]['diff'] < things[1]['diff']:
-            answers_so_far.append({'question': f"Is it {things[0]['name']}?", 'id': 0})
+        if things and things[0]['diff'] < things[1]['diff'] and things[0]['diff'] < 0.3:
+            answers_so_far.append({'question': f"Is the thing '{things[0]['name']}'?", 'id': 0})
+        elif len(answers_so_far) > 30:
+            out_of_questions = True
         elif things:
-            relevant_questions = self.db.relevant_questions(things[:5], answers_so_far)
+            reference_things = [x for x in things if x['diff'] < 0.2][:20] or things[:10]
+            relevant_questions = self.db.relevant_questions(reference_things, answers_so_far)
             if relevant_questions:
-                answers_so_far.append(random.choice(relevant_questions[:min(3, len(relevant_questions))]))
+                answers_so_far.append(relevant_questions[0])
+                #answers_so_far.append(random.choice(relevant_questions[:min(2, len(relevant_questions))]))
             else:
                 out_of_questions = True
         elif question_dict:
@@ -157,6 +176,8 @@ URLS = (
     url(r"/teach/?$", TeachHandler),
     url(r"/teach/missing/?$", TeachMissingHandler),
     url(r"/question/new/?$", NewQuestionHandler),
+    url(r"/things/?$", ThingsHandler),
+    url(r"/thing/(?P<thing_id>[0-9]+)/?$", ThingHandler),
     url(r"/network/?$", NetworkHandler),
     url(r"/guess/?$", GuessHandler),
 )

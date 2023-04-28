@@ -2,7 +2,8 @@
 
 CREATE TABLE thing (
     id serial PRIMARY KEY,
-    name text UNIQUE
+    name text UNIQUE,
+    timestamp timestamp default now()
 );
 
 CREATE TABLE question (

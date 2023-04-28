@@ -4,14 +4,15 @@
   <form method="POST">
 
     {% if out_of_questions %}
-      <p>I'm out of questions. So probably I don't know about the thing you are thinking of.</p>
+      <p>I already asked 20 questions. So, I give up as I probably don't know about the thing you are thinking of.</p>
       <label>So, what is it?</label>
       <input type="text" name="thing">
     {% else %}
-      {% if things and things[0]['diff'] < things[1]['diff'] %}
+      {% if things and answers_so_far and answers_so_far[0]['question'].startswith('Is the thing ') %}
         <input type="text" name="guess_id" value="{{ things[0]['id'] }}" hidden>
-      {% elif things %}
-        <p>It could be {{ ', '.join([x['name'] for x in things[:6]]) }} or {{ things[6]['name'] }}</p>
+      {% end %}
+      {% if things %}
+        <p>It could be {{ ', '.join(['{} ({})'.format(x['name'], x['diff']) for x in things[:6]]) }} or {{ things[6]['name'] }}</p>
       {% end %}
       {% if things %}
         <p>And most likely it is not {{ ', '.join([x['name'] for x in things[::-1][:6]]) }} or {{ things[::-1][6]['name'] }}</p>

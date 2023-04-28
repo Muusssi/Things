@@ -1,0 +1,29 @@
+{% extends base.html %}
+
+{% block body %}
+
+  <table class="table-hover sortable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Thing</th>
+        <th>Answers</th>
+        <th>Answered questions</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for thing in things %}
+      <tr>
+        <td><a href="/thing/{{ thing['id'] }}/">{{ thing['id'] }}</a></td>
+        <td>{{ thing['name'] }}</td>
+        <td>{{ thing['answer_count'] }}</td>
+        <td>{{ thing['answered'] }}</td>
+        <td><a href="/teach?thing={{ url_escape(thing['name']) }}">Teach</a></td>
+      </tr>
+    {% end %}
+    </tbody>
+
+  </table>
+
+{% end %}

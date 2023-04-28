@@ -106,7 +106,7 @@ class NetworkDataHandler(BaseDataHandler):
                         length:
                           type: number
         """
-        max_diff = float(self.get_argument('max_diff', 0.1))
+        max_diff = float(self.get_argument('max_diff', 0.2))
         min_links = int(self.get_argument('min_links', 1))
         things, links = self.db.network_data(max_diff, min_links)
         self.write({'things': things, 'links': links})

@@ -1,0 +1,45 @@
+{% extends base.html %}
+
+{% block body %}
+
+  <table class="table-bordered">
+    <thead>
+      <tr>
+        <th>Question</th>
+        <th>Answer</th>
+        <th>Answers</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for answer in answers %}
+      <tr>
+        <td>{{ answer['question'] }}</td>
+        <td>{{ answer['answer'] }}</td>
+        <td>{{ answer['count'] }}</td>
+      </tr>
+    {% end %}
+    </tbody>
+
+  </table>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Thing</th>
+        <th>Diff</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for thing in similar_things %}
+      <tr>
+        <td><a href="/thing/{{ thing['id'] }}/">{{ thing['id'] }}</a></td>
+        <td>{{ thing['name'] }}</td>
+        <td>{{ thing['diff'] }}</td>
+      </tr>
+    {% end %}
+    </tbody>
+
+  </table>
+
+{% end %}
